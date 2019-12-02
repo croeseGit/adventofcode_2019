@@ -3,63 +3,54 @@ package puzzle2
 class Solver {
 
     fun solve(input: String): Result {
-        val program = compile(input)
-        restoreProgram(program, 12, 2)
-        executeProgram(program)
-
         return Result(
-            valueLeftOnPosition0 = program[0],
-            nounAndVerb = findNounAndVerb(input)
+            part1 = executeWithNounAndVerb(input, 12, 2),
+            part2 = findNounAndVerb(input)
         )
     }
 
     private fun findNounAndVerb(input: String): Int? {
         for (noun in 0..99) {
             for (verb in 0..99) {
-                val program = compile(input)
-                restoreProgram(program, noun, verb)
-                executeProgram(program)
-                if (program[0] == 19690720) {
+                val result = executeWithNounAndVerb(input, noun, verb)
+                if (result == 19690720) {
                     return 100 * noun + verb
                 }
             }
         }
-
         return null
     }
 
-    private fun restoreProgram(program: MutableMap<Int, Int>, noun: Int, verb: Int) {
+    private fun executeWithNounAndVerb(input: String, noun: Int, verb: Int): Int {
+        val program = compile(input)
         program[1] = noun
         program[2] = verb
+        executeProgram(program)
+        return program[0]!!
     }
 
     private fun executeProgram(program: MutableMap<Int, Int>) {
-        execute(program, 0)
-    }
+        var pointer = 0
+        var opCode = program[0]
 
-    private fun execute(program: MutableMap<Int, Int>, position: Int) {
-        val opCode = program[position]
-        if (opCode == null || opCode == 99) {
-            return
+        while (opCode != 99) {
+            val pointerA = program[pointer + 1]
+            val pointerB = program[pointer + 2]
+            val pointerResult = program[pointer + 3]
+
+            when (opCode) {
+                1 -> {
+                    program[pointerResult!!] = program[pointerA]!! + program[pointerB]!!
+                }
+                2 -> {
+                    program[pointerResult!!] = program[pointerA]!! * program[pointerB]!!
+                }
+            }
+
+            pointer += 4
+            opCode = program[pointer]!!
         }
 
-        val positionA = program[position + 1]
-        val positionB = program[position + 2]
-        val positionResult = program[position + 3]
-
-        when (opCode) {
-            1 -> {
-                program[positionResult!!] = program[positionA]!! + program[positionB]!!
-            }
-            2 -> {
-                program[positionResult!!] = program[positionA]!! * program[positionB]!!
-            }
-            else -> {
-                throw RuntimeException()
-            }
-        }
-
-        execute(program, position + 4)
     }
 
     private fun compile(input: String): MutableMap<Int, Int> {
